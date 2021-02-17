@@ -1,37 +1,23 @@
-## Welcome to GitHub Pages
+## Welcome to my blog
 
-You can use the [editor on GitHub](https://github.com/abhip/abhiblog/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+I would be posting quick summary of things which i learned 
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### How to get core dump for a process running inside docker container
 
-### Markdown
+The process to collect core dump for a process inside docker container seems to have some additional steps compared to taking core dump directly on the host.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+1.  In general when we want to collect core dump, we will 
+    - Set the maximum size of a core dump to unlimited by running ```ulimit -c unlimited ```
+    - Set where core dumps will be written by running ```sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t ``` Here core pattern will be written to tmp directory.
+2.  Now if when we try to run above command to set where the core dump will be written inside a container, you may see the message **sysctl: setting key "kernel.core_pattern": Read-only file system** This is because we are not running the container in privileged mode. In order to run the container in privileged mode, one can use the following command 
 ```
+docker run --ulimit core=-1 -dit --privileged --network host --name test haproxy:hatetesting
+```
+In above command, we pass **--privileged** flag to run the container in privileged mode and **--ulimit core=-1** to set maximum size of core dump to unlimited. If you now ```sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t``` inside the container it will work without any issue. Important thing one should be aware of is that when you set the core pattern inside the container, it will also change on the host. So you may want to change back the core pattern location on the host after collecting the core dump for the process. Another note, enabling privileged mode comes with some security concerns, please refer to the documentation before enabling it. 
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+3.  If you want all containers to have privileged flag true and ulimit set to unlimited then you can modify your docker demon config file to have these flags/options enabled. Refer to https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file
+4.  Inside the container, you can test if the core dump are getting created by running ```kill -11 $pid ```
 
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/abhip/abhiblog/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+### Links
+1.  Know more about core dumps - https://jvns.ca/blog/2018/04/28/debugging-a-segfault-on-linux/
+2.  Discussion around collecting core dumps inside docker container - https://github.com/moby/moby/issues/11740
