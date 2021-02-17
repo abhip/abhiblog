@@ -15,7 +15,7 @@ docker run --ulimit core=-1 -dit --privileged --network host --name test haproxy
 ```
 In above command, we pass **--privileged** flag to run the container in privileged mode and **--ulimit core=-1** to set maximum size of core dump to unlimited. If you now ```sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%h.%t``` inside the container it will work without any issue. Important thing one should be aware of is that when you set the core pattern inside the container, it will also change on the host. So you may want to change back the core pattern location on the host after collecting the core dump for the process. Another note, enabling privileged mode comes with some security concerns, please refer to the documentation before enabling it. 
 
-3.  If you want all containers to have privileged flag true and ulimit set to unlimited then you can modify your docker demon config file to have these flags/options enabled. Refer to https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file
+3.  If you want by default containers which are started by docker demon to have privileged flag true and ulimit set to unlimited then you can modify your docker demon config file to have these flags/options enabled. Refer to https://docs.docker.com/engine/reference/commandline/dockerd/#daemon-configuration-file
 4.  Inside the container, you can test if the core dump are getting created by running ```kill -11 $pid ```
 
 ### Links
